@@ -1,7 +1,7 @@
 resource "aws_security_group" "alb" {
   name        = "strideup-prod-alb-sg"
   description = "Allow HTTP/HTTPS public traffic"
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     description = "HTTP"
@@ -31,7 +31,7 @@ resource "aws_security_group" "alb" {
 resource "aws_security_group" "ecs" {
   name        = "strideup-prod-ecs-sg"
   description = "Allow traffic from ALB to ECS"
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     description     = "App traffic from ALB"
@@ -53,7 +53,7 @@ resource "aws_security_group" "ecs" {
 resource "aws_security_group" "rds" {
   name        = "strideup-prod-rds-sg"
   description = "Allow Postgres from ECS"
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     description     = "Postgres from ECS"
