@@ -1,3 +1,18 @@
+data "aws_ami" "ubuntu_arm64" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 module "network" {
   source = "../../modules/network"
 
@@ -19,8 +34,8 @@ module "network" {
     "10.0.12.0/24"
   ]
 
-  enable_nat_gateway = true
-  single_nat_gateway = true
+  enable_nat_gateway = false
+  single_nat_gateway = false
 
   tags = {
     Name = "strideup-prod-vpc"
@@ -72,5 +87,51 @@ module "database" {
 
   tags = {
     Name = "strideup-prod-postgres"
+  }
+}
+
+module "ec2" {
+  source = "../../modules/ec2"
+
+  name          = "strideup-prod-app"
+  ami_id        = data.aws_ami.ubuntu_arm64.id
+  instance_type = "t4g.micro"
+
+  subnet_id          = module.network.public_subnets[0]
+  security_group_ids = [module.security.ec2_sg_id]
+
+  key_name = ""
+
+  tags = {
+    Name = "strideup-prod-app"
+  }
+}
+
+module "route53" {
+  source = "../../modules/route53"
+
+  zone_name = "strideup.club"
+
+  records = {
+    root = {
+      name    = "strideup.club"
+      type    = "A"
+      ttl     = 300
+      records = [module.ec2.public_ip]
+    }
+
+    admin = {
+      name    = "admin.strideup.club"
+      type    = "A"
+      ttl     = 300
+      records = [module.ec2.public_ip]
+    }
+
+    wildcard = {
+      name    = "*.strideup.club"
+      type    = "A"
+      ttl     = 300
+      records = [module.ec2.public_ip]
+    }
   }
 }
